@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Model files (can be large)
+models/*.onnx
+models/*.pt
+models/*.pth
+models/*.bin
+# Keep .gitkeep
+!models/.gitkeep
+
+# Results
+results/raw/*.json
+results/plots/*.png
+results/plots/*.pdf
+# Keep .gitkeep files
+!results/raw/.gitkeep
+!results/plots/.gitkeep
+
+# PyTorch/Transformers cache
+.cache/
+transformers_cache/
+torch_cache/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local

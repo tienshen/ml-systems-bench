@@ -1,0 +1,2 @@
+# This directory stores exported ONNX models
+# Models are created by running: python scripts/export_to_onnx.py <model_name>
