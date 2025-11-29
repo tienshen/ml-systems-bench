@@ -3,6 +3,8 @@ import os
 import json
 import numpy as np
 import onnxruntime as ort
+import socket
+
 
 MODEL_NAME = "bert-base-uncased"
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "models", f"{MODEL_NAME}.onnx")
@@ -68,16 +70,27 @@ def main():
     mean = lat.mean()
     throughput = RUNS / lat.sum()
 
+    # Obtain percentile latencies
+    p50 = float(np.percentile(lat, 50) * 1000)
+    p90 = float(np.percentile(lat, 90) * 1000)
+    p99 = float(np.percentile(lat, 99) * 1000)
+
     print(f"Runs: {RUNS}")
     print(f"Mean latency: {mean * 1000:.2f} ms")
     print(f"Throughput: {throughput:.2f} inferences/sec")
+
+    # Save results to json
     summary = {
+        "host": socket.gethostname(),
         "model": MODEL_NAME,
         "backend": "cpu",
         "batch_size": BATCH_SIZE,
         "seq_len": SEQ_LEN,
         "runs": RUNS,
         "mean_latency_ms": mean * 1000,
+        "p50_ms": p50,
+        "p90_ms": p90,
+        "p99_ms": p99,
         "throughput": throughput,
     }
 
