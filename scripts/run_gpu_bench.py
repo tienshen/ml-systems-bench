@@ -93,7 +93,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch", type=int, default=1, help="Batch size")
+    parser.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     args = parser.parse_args()
 
     BATCH_SIZE = args.batch  # override the constant
+    SEQ_LEN = args.seq_len  # override the constant
     main()
