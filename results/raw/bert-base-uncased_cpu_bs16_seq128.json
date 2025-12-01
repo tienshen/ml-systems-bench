@@ -1,0 +1,13 @@
+{
+  "host": "DESKTOP-DIA8VEH",
+  "model": "bert-base-uncased",
+  "backend": "cpu",
+  "batch_size": 16,
+  "seq_len": 128,
+  "runs": 100,
+  "mean_latency_ms": 1.0874303559999996,
+  "p50_ms": 1076.202749999993,
+  "p90_ms": 1145.3248699999904,
+  "p99_ms": 1178.526916000013,
+  "throughput": 14.71358594296958
+}
