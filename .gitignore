@@ -47,9 +47,9 @@ models/*.bin
 !models/.gitkeep
 
 # Results
-results/raw/*.json
+#results/raw/*.json
 results/plots/*.png
-results/plots/*.pdf
+#results/plots/*.pdf
 # Keep .gitkeep files
 !results/raw/.gitkeep
 !results/plots/.gitkeep
