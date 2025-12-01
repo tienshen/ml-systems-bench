@@ -67,17 +67,11 @@ def main():
         latencies.append(end - start)
 
     lat = np.array(latencies)
-    mean = lat.mean()
-    throughput = RUNS / lat.sum()
 
     # Obtain percentile latencies
     p50 = float(np.percentile(lat, 50) * 1000)
     p90 = float(np.percentile(lat, 90) * 1000)
     p99 = float(np.percentile(lat, 99) * 1000)
-
-    print(f"Runs: {RUNS}")
-    print(f"Mean latency: {mean * 1000:.2f} ms")
-    print(f"Throughput: {throughput:.2f} inferences/sec")
 
     # Save results to json
     summary = {
@@ -87,12 +81,16 @@ def main():
         "batch_size": BATCH_SIZE,
         "seq_len": SEQ_LEN,
         "runs": RUNS,
-        "mean_latency_ms": mean * 1000,
+        "mean_latency_ms": lat.mean(),
         "p50_ms": p50,
         "p90_ms": p90,
         "p99_ms": p99,
-        "throughput": throughput,
+        "throughput": RUNS * BATCH_SIZE / lat.sum(),
     }
+
+    print(f"Runs: {summary['runs']}")
+    print(f"Mean latency: {summary['mean_latency_ms']:.2f} ms")
+    print(f"Throughput: {summary['throughput']:.2f} inferences/sec")
 
     os.makedirs("results/raw", exist_ok=True)
     out_path = os.path.join("results", "raw", f"{MODEL_NAME}_cpu_bs{BATCH_SIZE}_seq{SEQ_LEN}.json")
