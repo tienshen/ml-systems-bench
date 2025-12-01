@@ -14,11 +14,14 @@ WARMUP = 10
 RUNS = 100
 
 def make_dummy_input(input_def):
-    # match CPU version (simplified)
     shape = [BATCH_SIZE, SEQ_LEN]
-    if "token_type" in input_def.name.lower():
+    # match CPU version (simplified)
+    name = input_def.name.lower()
+    if "input_ids" in name:
+        return np.random.randint(0, 30000, size=shape, dtype=np.int64)
+    elif "token_type" in name:
         return np.zeros(shape, dtype=np.int64)
-    elif "attention" in input_def.name.lower():
+    elif "attention" in name:
         return np.ones(shape, dtype=np.int64)
     else:
         return np.random.randint(0, 10000, size=shape, dtype=np.int64)
@@ -49,11 +52,6 @@ def main():
         latencies.append(end - start)
 
     lat = np.array(latencies)
-    print(f"Runs: {RUNS}")
-    print(f"Mean latency: {lat.mean() * 1000:.2f} ms")
-    print(f"Throughput: {RUNS / lat.sum():.2f} inferences/sec")
-
-    lat = np.array(latencies)
 
     # Obtain percentile latencies
     p50 = float(np.percentile(lat, 50) * 1000)
@@ -73,8 +71,12 @@ def main():
         "p50_ms": p50,
         "p90_ms": p90,
         "p99_ms": p99,
-        "throughput": float(RUNS / lat.sum()),
+        "throughput": float(RUNS * BATCH_SIZE / lat.sum()),
     }
+
+    print(f"Runs: {summary['runs']}")
+    print(f"Mean latency: {summary['mean_latency_ms']:.2f} ms")
+    print(f"Throughput: {summary['throughput']:.2f} inferences/sec")
 
     os.makedirs("results/raw", exist_ok=True)
     out_path = os.path.join(
