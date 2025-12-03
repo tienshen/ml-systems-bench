@@ -1,0 +1,13 @@
+{
+  "host": "DESKTOP-DIA8VEH",
+  "model": "distilbert-base-uncased",
+  "backend": "gpu",
+  "batch_size": 1,
+  "seq_len": 128,
+  "runs": 100,
+  "mean_latency_ms": 2.0713899999999863,
+  "p50_ms": 2.1439000000000874,
+  "p90_ms": 2.219359999999937,
+  "p99_ms": 2.4811409999999388,
+  "throughput": 482.76761015550267
+}
