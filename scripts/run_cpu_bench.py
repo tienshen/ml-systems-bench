@@ -81,7 +81,7 @@ def main():
         "batch_size": BATCH_SIZE,
         "seq_len": SEQ_LEN,
         "runs": RUNS,
-        "mean_latency_ms": lat.mean(),
+        "mean_latency_ms": float(lat.mean() * 1000),
         "p50_ms": p50,
         "p90_ms": p90,
         "p99_ms": p99,
@@ -104,10 +104,14 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, default="bert-base-uncased",
+                        help="Hugging Face model name (used as ONNX filename)")
     parser.add_argument("--batch", type=int, default=1, help="Batch size")
     parser.add_argument("--seq-len", type=int, default=128, help="Sequence length")
     args = parser.parse_args()
 
+    MODEL_NAME = args.model  # override the constant
+    MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "models", f"{MODEL_NAME}.onnx")  # update model path
     BATCH_SIZE = args.batch  # override the constant
     SEQ_LEN = args.seq_len  # override the constant
     main()
