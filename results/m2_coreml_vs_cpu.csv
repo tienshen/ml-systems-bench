@@ -1,0 +1,5 @@
+id,provider_mode,seq_len,batch_size,n_warmup,n_iters,model_name,latency_p50_ms,latency_p95_ms,throughput_samples_per_s
+cpu_only_s128_b1,cpu_only,128,1,5,50,bert-base-uncased,66.86924999999988,74.09652080000008,14.637757403383072
+coreml_cpu_s128_b1,coreml_plus_cpu,128,1,5,50,bert-base-uncased,129.2136039999985,191.76376890000037,6.924829349796088
+cpu_only_s512_b1,cpu_only,512,1,5,50,bert-base-uncased,315.8181869999996,418.50792675000014,3.089148390231982
+coreml_cpu_s512_b1,coreml_plus_cpu,512,1,5,50,bert-base-uncased,1048.6070415000022,1288.5758414500042,0.9206473291324815

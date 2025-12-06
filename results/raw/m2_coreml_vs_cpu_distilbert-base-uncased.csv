@@ -1,0 +1,5 @@
+id,provider_mode,seq_len,batch_size,n_warmup,n_iters,model_name,latency_p50_ms,latency_p95_ms,throughput_samples_per_s
+cpu_only_s128_b1,cpu_only,128,1,5,50,distilbert-base-uncased,33.436895500000176,37.6316392500002,29.08505051985436
+coreml_cpu_s128_b1,coreml_plus_cpu,128,1,5,50,distilbert-base-uncased,68.12556250000057,80.24136890000004,13.674445265825218
+cpu_only_s512_b1,cpu_only,512,1,5,50,distilbert-base-uncased,143.62541700000088,157.00073314999932,6.854748823190258
+coreml_cpu_s512_b1,coreml_plus_cpu,512,1,5,50,distilbert-base-uncased,280.88052049999845,444.6417440500004,3.2008710886430376
