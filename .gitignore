@@ -43,6 +43,7 @@ models/*.onnx
 models/*.pt
 models/*.pth
 models/*.bin
+tiny-system-bert/
 # Keep .gitkeep
 !models/.gitkeep
 
