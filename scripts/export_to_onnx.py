@@ -15,7 +15,7 @@ def main():
         description="Export HuggingFace models to ONNX format"
     )
     parser.add_argument(
-        "model_name",
+        "--model-name",
         type=str,
         help="HuggingFace model name (e.g., 'bert-base-uncased', 'distilbert-base-uncased')"
     )
