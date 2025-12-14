@@ -1,0 +1,5 @@
+id,provider_mode,seq_len,batch_size,n_warmup,n_iters,model_name,latency_p50_ms,latency_p95_ms,throughput_samples_per_s
+cpu_only_s128_b1,cpu_only,128,1,5,50,tiny-systems-bert,0.6804375000000196,1.64390899999991,1236.892740397015
+coreml_cpu_s128_b1,coreml_plus_cpu,128,1,5,50,tiny-systems-bert,5.04181250000002,7.564708149999765,175.2833016362705
+cpu_only_s512_b1,cpu_only,512,1,5,50,tiny-systems-bert,4.63318750000008,11.395618749999986,181.08265436633314
+coreml_cpu_s512_b1,coreml_plus_cpu,512,1,5,50,tiny-systems-bert,17.348958499999956,19.555949999999985,56.3973405053544
