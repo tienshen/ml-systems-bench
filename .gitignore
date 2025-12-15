@@ -44,6 +44,7 @@ models/*.pt
 models/*.pth
 models/*.bin
 tiny-systems-bert/
+profiles/
 # Keep .gitkeep
 !models/.gitkeep
 
