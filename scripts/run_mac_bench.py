@@ -1,52 +1,74 @@
 import os
 import time
-import socket
 import argparse
 import numpy as np
 import onnxruntime as ort
+from typing import Dict, Any
+from transformers import AutoTokenizer
 
 RUNS = 100
+WARMUP = 5
 
-def make_dummy_input(input_defs, batch_size, seq_len):
-    feeds = {}
-    for inp in input_defs:
-        name = inp.name
-        shape = []
-        for d in inp.shape:
-            if isinstance(d, int):
-                shape.append(d)
-            else:
-                # assume [batch, seq]
-                if len(shape) == 0:
-                    shape.append(batch_size)
-                else:
-                    shape.append(seq_len)
+def make_dummy_inputs(tokenizer, seq_len: int, batch_size: int) -> Dict[str, Any]:
+    text = ["hello world"] * batch_size
+    enc = tokenizer(
+        text,
+        padding="max_length",
+        truncation=True,
+        max_length=seq_len,
+        return_tensors="np",
+    )
+    return {k: v for k, v in enc.items()}
 
-        lname = name.lower()
-        if "input_ids" in lname:
-            arr = np.random.randint(0, 30000, size=shape, dtype=np.int64)
-        elif "token_type" in lname:
-            arr = np.zeros(shape, dtype=np.int64)
-        elif "attention" in lname:
-            arr = np.ones(shape, dtype=np.int64)
-        else:
-            arr = np.random.randint(0, 10000, size=shape, dtype=np.int64)
+def make_providers(ep_mode: str):
+    """
+    ep_mode:
+      - "cpu"         -> CPU only
+      - "coreml"      -> CoreML only (may fail if any op unsupported)
+      - "coreml_cpu"  -> CoreML preferred + CPU fallback (recommended for diagnosis)
+    """
+    if ep_mode == "cpu":
+        return ["CPUExecutionProvider"]
+    if ep_mode == "coreml":
+        return ["CoreMLExecutionProvider"]
+    if ep_mode == "coreml_cpu":
+        return ["CoreMLExecutionProvider", "CPUExecutionProvider"]
+    raise ValueError(f"Unknown --ep {ep_mode}")
 
-        feeds[name] = arr
-    return feeds
-
-def run_bench(model_name, provider, batch_size, seq_len):
+def run_bench(model_name, providers, batch_size, seq_len, profile_dir=None, verbose=False):
     models_dir = os.path.join(os.path.dirname(__file__), "..", "models")
     model_path = os.path.join(models_dir, f"{model_name}.onnx")
-    print(f"\n=== {model_name} on {provider}, batch={batch_size}, seq={seq_len} ===")
+
+    print(f"\n=== {model_name} on {providers}, batch={batch_size}, seq={seq_len} ===")
     print(f"Loading ONNX model from {model_path}")
 
-    sess = ort.InferenceSession(model_path, providers=[provider])
-    inputs = sess.get_inputs()
-    feed = make_dummy_input(inputs, batch_size, seq_len)
+    so = ort.SessionOptions()
+    if verbose:
+        so.log_severity_level = 0   # VERBOSE
+        so.log_verbosity_level = 1
+
+    if profile_dir is not None:
+        os.makedirs(profile_dir, exist_ok=True)
+        so.enable_profiling = True
+        # Newer ORT supports this; older versions might not.
+        # Safe to try; if it errors, remove these two lines.
+        try:
+            so.profile_file_prefix = os.path.join(
+                profile_dir,
+                f"{model_name}_b{batch_size}_s{seq_len}_" + "_".join([p if isinstance(p, str) else p[0] for p in providers])
+            )
+        except Exception:
+            pass
+
+    # providers can be list[str] or list[("EP", {opts})]; we keep list[str] here
+    sess = ort.InferenceSession(model_path, sess_options=so, providers=providers)
+    print("Session providers (resolved):", sess.get_providers())
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    feed = make_dummy_inputs(tokenizer, seq_len, batch_size)
 
     # warmup
-    for _ in range(5):
+    for _ in range(WARMUP):
         sess.run(None, feed)
 
     times = []
@@ -55,6 +77,10 @@ def run_bench(model_name, provider, batch_size, seq_len):
         sess.run(None, feed)
         t1 = time.perf_counter()
         times.append(t1 - t0)
+
+    if profile_dir is not None:
+        prof_path = sess.end_profiling()
+        print("ORT profile written to:", prof_path)
 
     times = np.array(times)
     mean = times.mean() * 1000
@@ -72,12 +98,19 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="bert-base-uncased")
     parser.add_argument("--batch", type=int, default=1)
     parser.add_argument("--seq-len", type=int, default=128)
+    parser.add_argument("--ep", type=str, default="coreml_cpu", choices=["cpu", "coreml", "coreml_cpu"])
+    parser.add_argument("--profile-dir", type=str, default=None, help="If set, enable ORT profiling and write JSON here")
+    parser.add_argument("--verbose", action="store_true", help="Enable ORT verbose logging")
     args = parser.parse_args()
 
-    providers_to_test = ["CPUExecutionProvider", "CoreMLExecutionProvider"]
+    requested = make_providers(args.ep)
+    print("Requested providers:", requested)
 
-    for ep in providers_to_test:
-        if ep in ort.get_available_providers():
-            run_bench(args.model, ep, args.batch, args.seq_len)
-        else:
-            print(f"Skipping {ep} (not available)")
+    # availability guard
+    for p in requested:
+        if p not in ort.get_available_providers():
+            print(f"Requested provider not available: {p}")
+            print("Available providers:", ort.get_available_providers())
+            raise SystemExit(2)
+
+    run_bench(args.model, requested, args.batch, args.seq_len, profile_dir=args.profile_dir, verbose=args.verbose)
