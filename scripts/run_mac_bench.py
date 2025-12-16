@@ -5,9 +5,12 @@ import numpy as np
 import onnxruntime as ort
 from typing import Dict, Any
 from transformers import AutoTokenizer
+from pathlib import Path
+import re
 
-RUNS = 100
-WARMUP = 5
+
+RUNS = 2
+WARMUP = 1
 
 def make_dummy_inputs(tokenizer, seq_len: int, batch_size: int) -> Dict[str, Any]:
     text = ["hello world"] * batch_size
@@ -19,6 +22,15 @@ def make_dummy_inputs(tokenizer, seq_len: int, batch_size: int) -> Dict[str, Any
         return_tensors="np",
     )
     return {k: v for k, v in enc.items()}
+
+def infer_tokenizer_from_onnx_path(onnx_path: str) -> str:
+    stem = Path(onnx_path).stem  # remove .onnx
+    # strip suffixes like _b1_s128, _fastgelu, _static, etc.
+    stem = re.sub(r"_b\d+_s\d+.*$", "", stem)
+    stem = re.sub(r"_s\d+_b\d+.*$", "", stem)
+    stem = re.sub(r"_fastgelu.*$", "", stem)
+    stem = re.sub(r"_static.*$", "", stem)
+    return stem
 
 def make_providers(ep_mode: str):
     """
@@ -35,7 +47,8 @@ def make_providers(ep_mode: str):
         return ["CoreMLExecutionProvider", "CPUExecutionProvider"]
     raise ValueError(f"Unknown --ep {ep_mode}")
 
-def run_bench(model_name, providers, batch_size, seq_len, profile_dir=None, verbose=False):
+def run_bench(model_name, providers, batch_size, seq_len, profile_dir=None, verbose=False,
+             onnx_path=None, tokenizer_name=None):
     models_dir = os.path.join(os.path.dirname(__file__), "..", "models")
     model_path = os.path.join(models_dir, f"{model_name}.onnx")
 
@@ -62,9 +75,11 @@ def run_bench(model_name, providers, batch_size, seq_len, profile_dir=None, verb
 
     # providers can be list[str] or list[("EP", {opts})]; we keep list[str] here
     sess = ort.InferenceSession(model_path, sess_options=so, providers=providers)
+    for i in sess.get_inputs():
+        print(i.name, i.shape, i.type)
     print("Session providers (resolved):", sess.get_providers())
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained("tiny-systems-bert", use_fast=True) #model_name)
     feed = make_dummy_inputs(tokenizer, seq_len, batch_size)
 
     # warmup
