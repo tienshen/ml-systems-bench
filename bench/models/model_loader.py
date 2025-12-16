@@ -5,6 +5,20 @@ from typing import Optional, Dict, Any
 import torch
 from transformers import AutoTokenizer, AutoModel
 
+import torch
+import torch.nn as nn
+
+class FastGELU(nn.Module):
+    def forward(self, x):
+        return 0.5 * x * (1.0 + torch.tanh(0.7978845608 * (x + 0.044715 * x * x * x)))
+
+def replace_gelu(m: nn.Module):
+    for name, child in m.named_children():
+        if isinstance(child, nn.GELU):
+            setattr(m, name, FastGELU())
+        else:
+            replace_gelu(child)
+
 
 class ModelLoader:
     """Helper class for loading and exporting models."""
@@ -43,7 +57,8 @@ class ModelLoader:
         self,
         output_path: str,
         input_sample: Optional[Dict[str, torch.Tensor]] = None,
-        opset_version: int = 14
+        opset_version: int = 14,
+        static_shapes: bool = False
     ) -> None:
         """
         Export model to ONNX format.
@@ -70,13 +85,12 @@ class ModelLoader:
         input_names = list(input_sample.keys())
         output_names = ["output"]
         
-        # Create dynamic axes for batch and sequence
-        dynamic_axes = {
-            name: {0: "batch_size", 1: "sequence_length"}
-            for name in input_names
-        }
-        dynamic_axes["output"] = {0: "batch_size", 1: "sequence_length"}
-        
+        # Only set dynamic axes if we want a dynamic model
+        dynamic_axes = None
+        if not static_shapes:
+            dynamic_axes = {name: {0: "batch_size", 1: "sequence_length"} for name in input_names}
+            # Avoid guessing output dims; leave output dynamic axes unspecified unless you know them.
+
         print(f"Exporting to ONNX: {output_path}")
         
         # Export
@@ -118,3 +132,6 @@ class ModelLoader:
             max_length=max_length,
             truncation=True
         )
+    
+    def apply_fast_gelu(self):
+        replace_gelu(self.model)
