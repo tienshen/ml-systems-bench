@@ -9,15 +9,50 @@ import torch
 import torch.nn as nn
 
 class FastGELU(nn.Module):
+    """
+    Fast GELU approximation using tanh.
+    More fusion-friendly than the cubic version.
+    """
     def forward(self, x):
+        # Original: 0.5 * x * (1.0 + tanh(sqrt(2/pi) * (x + 0.044715 * x^3)))
+        # Simplified: 0.5 * x * (1.0 + tanh(0.7978845608 * (x + 0.044715 * x * x * x)))
         return 0.5 * x * (1.0 + torch.tanh(0.7978845608 * (x + 0.044715 * x * x * x)))
 
 def replace_gelu(m: nn.Module):
+    # Import here to avoid issues if transformers is not installed
+    try:
+        from transformers.activations import GELUActivation
+    except ImportError:
+        GELUActivation = None
+    
     for name, child in m.named_children():
+        # Check for torch.nn.GELU
         if isinstance(child, nn.GELU):
             setattr(m, name, FastGELU())
-        else:
-            replace_gelu(child)
+            print(f"  Replaced nn.GELU at {name}")
+        # Check for transformers.GELUActivation
+        elif GELUActivation and isinstance(child, GELUActivation):
+            setattr(m, name, FastGELU())
+            print(f"  Replaced GELUActivation at {name}")
+        # Also check for BERT-style activation functions that use GELU
+        elif hasattr(child, 'act'):
+            if isinstance(child.act, nn.GELU):
+                child.act = FastGELU()
+                print(f"  Replaced nn.GELU in {name}.act")
+            elif GELUActivation and isinstance(child.act, GELUActivation):
+                child.act = FastGELU()
+                print(f"  Replaced GELUActivation in {name}.act")
+        # Check if it has a hidden_act attribute that's GELU
+        if hasattr(child, 'hidden_act'):
+            if isinstance(child.hidden_act, nn.GELU):
+                child.hidden_act = FastGELU()
+                print(f"  Replaced nn.GELU in {name}.hidden_act")
+            elif GELUActivation and isinstance(child.hidden_act, GELUActivation):
+                child.hidden_act = FastGELU()
+                print(f"  Replaced GELUActivation in {name}.hidden_act")
+        
+        # Recurse into child modules
+        replace_gelu(child)
 
 
 class ModelLoader:
@@ -104,6 +139,12 @@ class ModelLoader:
             opset_version=opset_version,
             do_constant_folding=True
         )
+        
+        # Note: ONNX Runtime will automatically optimize the graph during inference
+        # For explicit optimization, you can use:
+        # 1. onnxruntime.InferenceSession with graph_optimization_level
+        # 2. onnxruntime-tools for model optimization
+        # 3. torch.onnx.export with optimization flags (already enabled via do_constant_folding)
         
         print(f"Model exported successfully to {output_path}")
     
