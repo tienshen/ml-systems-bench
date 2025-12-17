@@ -29,7 +29,7 @@ def infer_tokenizer_from_onnx_path(onnx_path: str) -> str:
     
     Examples:
         tiny-systems-bert_b1_s128_fast-gelu_fp16 -> tiny-systems-bert
-        bert-base-uncased_b1_s128_gelu_fp16 -> bert-base-uncased
+        bert-base-uncased_b1_s128_gelu_fp32 -> bert-base-uncased
         distilbert-base-uncased -> distilbert-base-uncased
     """
     stem = Path(onnx_path).stem  # remove .onnx
@@ -37,7 +37,7 @@ def infer_tokenizer_from_onnx_path(onnx_path: str) -> str:
     stem = re.sub(r"_b\d+_s\d+.*$", "", stem)  # _b1_s128...
     stem = re.sub(r"_s\d+_b\d+.*$", "", stem)  # _s128_b1...
     stem = re.sub(r"_(fast-)?gelu.*$", "", stem)  # _gelu, _fast-gelu
-    stem = re.sub(r"_fp(16|32).*$", "", stem)  # _fp16, _fp32
+    stem = re.sub(r"_fp(16|32).*$", "", stem)  # _fp16, _fp32 (explicit precision)
     stem = re.sub(r"_static.*$", "", stem)  # _static
     return stem
 
