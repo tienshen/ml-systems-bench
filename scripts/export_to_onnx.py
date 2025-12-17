@@ -81,9 +81,11 @@ def main():
     else:
         suffix += "_gelu"
     
-    # Add precision suffix
+    # Add precision suffix (always explicit: fp32 or fp16)
     if args.fp16:
         suffix += "_fp16"
+    else:
+        suffix += "_fp32"
 
     if args.output_name:
         output_name = args.output_name
