@@ -33,8 +33,9 @@ def get_dur_us(ev):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile", help="Path to ORT profile JSON")
-    ap.add_argument("--top", type=int, default=20)
+    ap.add_argument("--top", type=int, default=50)
     ap.add_argument("--filter", type=str, default="", help="Substring filter on name/category")
+    ap.add_argument("--output", type=str, default=None, help="Write summary to file instead of stdout")
     args = ap.parse_args()
 
     events = load_events(args.profile)
@@ -70,17 +71,29 @@ def main():
     def fmt(us):  # microseconds -> ms
         return us / 1000.0
 
-    print(f"Profile: {args.profile}")
-    print(f"Events used: {kept}")
-    print(f"Total (dur sum): {fmt(total):.2f} ms")
-
-    print("\nTop categories by time:")
+    # Build output as string
+    output_lines = []
+    output_lines.append(f"Profile: {args.profile}")
+    output_lines.append(f"Events used: {kept}")
+    output_lines.append(f"Total (dur sum): {fmt(total):.2f} ms")
+    output_lines.append("")
+    output_lines.append("Top categories by time:")
     for cat, us in sorted(by_cat.items(), key=lambda x: x[1], reverse=True)[:10]:
-        print(f"  {cat or '(none)'}: {fmt(us):.2f} ms")
-
-    print(f"\nTop {args.top} names by time:")
+        output_lines.append(f"  {cat or '(none)'}: {fmt(us):.2f} ms")
+    output_lines.append("")
+    output_lines.append(f"Top {args.top} names by time:")
     for name, us in sorted(by_name.items(), key=lambda x: x[1], reverse=True)[:args.top]:
-        print(f"  {name[:120]:120s}  {fmt(us):9.2f} ms  ({count_by_name[name]} events)")
+        output_lines.append(f"  {name[:120]:120s}  {fmt(us):9.2f} ms  ({count_by_name[name]} events)")
+    
+    output_text = "\n".join(output_lines)
+    
+    # Write to file or stdout
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(output_text)
+        print(f"Summary written to: {args.output}")
+    else:
+        print(output_text)
 
 if __name__ == "__main__":
     main()
