@@ -1,4 +1,4 @@
-# ML Systems Bench - Requirements
+# CoreML Execution Provider Performance Study - Requirements
 
 # Core dependencies
 numpy>=1.24.0
@@ -6,11 +6,12 @@ psutil>=5.9.0
 
 # Deep Learning frameworks
 torch>=2.0.0
+torchvision>=0.15.0  # NEW: For vision model export (MobileNet, ResNet, etc.)
 transformers>=4.30.0
 
 # ONNX support
 onnx>=1.14.0
-onnxruntime>=1.15.0
+onnxruntime>=1.15.0  # Includes CoreMLExecutionProvider on macOS
 
 # For CUDA/GPU support, install separately:
 # pip uninstall onnxruntime
