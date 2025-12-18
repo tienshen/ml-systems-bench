@@ -1,0 +1,5 @@
+timestamp,model_name,configuration,batch_size,providers,mean_latency_ms,p50_latency_ms,p90_latency_ms,p99_latency_ms,throughput_per_sec,coreml_usage_pct,profile_path
+2025-12-17_21-01-28,mobilenet_v2_b1_h224_w224_fp16,FP16 + CPU,1,CPUExecutionProvider,11.8972,11.5474,13.0516,17.1370,84.05,N/A,profiles/mobilenet_v2_b1_h224_w224_fp16_b1_CPUExecutionProvider.json
+2025-12-17_21-01-28,mobilenet_v2_b1_h224_w224_fp32,FP32 + CPU,1,CPUExecutionProvider,11.0337,9.1832,9.9740,38.0793,90.63,N/A,profiles/mobilenet_v2_b1_h224_w224_fp32_b1_CPUExecutionProvider.json
+2025-12-17_21-01-28,mobilenet_v2_b1_h224_w224_fp16,FP16 with CoreML,1,CoreMLExecutionProvider,11.7326,11.2200,13.2798,17.0981,85.23,0.00,profiles/mobilenet_v2_b1_h224_w224_fp16_b1_CoreMLExecutionProvider.json
+2025-12-17_21-01-28,mobilenet_v2_b1_h224_w224_fp32,FP32 with CoreML,1,CoreMLExecutionProvider,0.7278,0.7184,0.7943,0.8217,1374.06,100.00,profiles/mobilenet_v2_b1_h224_w224_fp32_b1_CoreMLExecutionProvider.json
