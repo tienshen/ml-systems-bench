@@ -111,80 +111,32 @@ def run_ort_benchmark(
     }
     print(
         f"[RESULT] p50={latency_p50_ms:.2f} ms, p95={latency_p95_ms:.2f} ms, "
-        f"throughput={throughput:.2f} samples/s"
-    )
-
-    return {**asdict(cfg), **metrics}
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model-name",
-        type=str,
-        required=True,
-        help="HF model id, e.g. bert-base-uncased or hf-internal-testing/tiny-random-bert",
-    )
-    parser.add_argument(
-        "--onnx-path",
-        type=str,
-        default=None,
-        help="Path to ONNX model file. "
-             "Default: models/<model-name-with-slashes-replaced>.onnx",
-    )
-    
-    parser.add_argument(
-        "--verbose-ort",
-        action="store_true",
-        help="Enable more verbose ONNX Runtime logs (info level).",
-    )
-    args = parser.parse_args()
-
-    model_name: str = args.model_name
-
-    # Default ONNX path: models/<model-name-with-slashes-replaced>.onnx
-    if args.onnx_path is None:
-        safe_name = model_name.replace("/", "-")
-        onnx_path = Path("models") / f"{safe_name}.onnx"
-    else:
-        onnx_path = Path(args.onnx_path)
-
-    if not onnx_path.exists():
-        raise FileNotFoundError(f"ONNX file not found at {onnx_path}")
-
-    out_csv = Path(f"results/raw/m2_coreml_vs_cpu_{model_name}.csv")
-    out_csv.parent.mkdir(parents=True, exist_ok=True)
-
-    print(f"[INFO] Model name: {model_name}")
-    print(f"[INFO] ONNX path:  {onnx_path}")
-    print(f"[INFO] Output CSV: {out_csv}")
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    # You can expand this list later if you want more seq lens / batch sizes
-    configs: List[M2ExperimentConfig] = [
-        M2ExperimentConfig("cpu_only_s128_b1", "cpu_only", 128, 1),
-        M2ExperimentConfig("coreml_cpu_s128_b1", "coreml_plus_cpu", 128, 1),
-        M2ExperimentConfig("cpu_only_s512_b1", "cpu_only", 512, 1),
-        M2ExperimentConfig("coreml_cpu_s512_b1", "coreml_plus_cpu", 512, 1),
-    ]
-
-    file_exists = out_csv.exists()
-    with out_csv.open("a", newline="") as f:
-        writer = None
-        for cfg in configs:
-            row = run_ort_benchmark(
-                cfg, onnx_path, tokenizer, model_name, args.verbose_ort
-            )
-            if writer is None:
-                fieldnames = list(row.keys())
-                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                if not file_exists:
-                    writer.writeheader()
-            writer.writerow(row)
-
-    print(f"\n[INFO] Appended results to {out_csv}")
-
-
-if __name__ == "__main__":
-    main()
+        f"throughp[?2004l
+/Users/tienlishen/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+usage: bench_m2_coreml_vs_cpu.py [-h] --model-name MODEL_NAME [--onnx-path ONNX_PATH]
+                                 [--verbose-ort]
+bench_m2_coreml_vs_cpu.py: error: the following arguments are required: --model-name
+[1m[7m%[27m[1m[0m                                                                                                  [0m[27m[24m[Jtienlishen@Mac coreml-ep-performance-study % [K[?2004hpplot_core       p  ppython3 scripts[1m/[0m[0m/plot_coreml_vs_cpu.py[1m [0m[0m [?2004l
+[WARN] No CSV files found in results/csv matching m2_coreml_vs_cpu_*.csv
+[1m[7m%[27m[1m[0m                                                                                                  [0m[27m[24m[Jtienlishen@Mac coreml-ep-performance-study % [K[?2004hpython3 scripts/plot_coreml_vs_cpu.py[?2004l
+[WARN] No CSV files found in results/csv matching m2_coreml_vs_cpu_*.csv
+[1m[7m%[27m[1m[0m                                                                                                  [0m[27m[24m[Jtienlishen@Mac coreml-ep-performance-study % [K[?2004hpython3 scripts/plot_coreml_vs_cpu.py[?2004l
+[WARN] No CSV files found in results/csv matching m2_coreml_vs_cpu_*.csv
+[1m[7m%[27m[1m[0m                                                                                                  [0m[27m[24m[Jtienlishen@Mac coreml-ep-performance-study % [K[?2004hpython3 scripts/plot_coreml_vs_cpu.py[?2004l
+[INFO] Found 3 CSV file(s) to plot in results/csv
+[INFO] Processing CSV: results/csv/m2_coreml_vs_cpu_bert-base-uncased.csv
+[INFO] Saved combined plot to results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_bert-base-uncased_combined.png
+[INFO] Processing CSV: results/csv/m2_coreml_vs_cpu_distilbert-base-uncased.csv
+[INFO] Saved combined plot to results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_distilbert-base-uncased_combined.png
+[INFO] Processing CSV: results/csv/m2_coreml_vs_cpu_tiny-systems-bert.csv
+[INFO] Saved combined plot to results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_tiny-systems-bert_combined.png
+[1m[7m%[27m[1m[0m                                                                                                  [0m[27m[24m[Jtienlishen@Mac coreml-ep-performance-study % [K[?2004hpython3 scripts/plot_coreml_vs_cpu.py[?2004l
+[INFO] Found 3 CSV file(s) to plot in results/csv
+[INFO] Processing CSV: results/csv/m2_coreml_vs_cpu_bert-base-uncased.csv
+[INFO] Saved combined plot to results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_bert-base-uncased_combined.png
+[INFO] Processing CSV: results/csv/m2_coreml_vs_cpu_distilbert-base-uncased.csv
+[INFO] Saved combined plot to results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_distilbert-base-uncased_combined.png
+[INFO] Processing CSV: results/csv/m2_coreml_vs_cpu_tiny-systems-bert.csv
+[INFO] Saved combined plot to results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_tiny-systems-bert_combined.png
+[1m[7m%[27m[1m[0m                                                                                                  [0m[27m[24m[Jtienlishen@Mac coreml-ep-performance-study % [K[?2004h
