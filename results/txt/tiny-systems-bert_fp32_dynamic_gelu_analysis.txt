@@ -1,0 +1,131 @@
+================================================================================
+Tiny-Systems-BERT FP32 Dynamic Batching Profile Analysis
+================================================================================
+
+Model Configuration:
+  - Model: tiny-systems-bert
+  - Precision: FP32
+  - Activation: GELU (with Erf)
+  - Batch size: Dynamic (tested with batch=1)
+  - Sequence length: Dynamic (tested with seq_len=128)
+  - ONNX file: tiny-systems-bert_gelu_fp32_dynamic.onnx
+  - Model size: 5.77 MB
+
+Export Details:
+  - Dynamic axes: batch_size, sequence_length
+  - Opset version: 14
+  - Architecture: 2 transformer layers, hidden size 128, ~4.4M parameters
+
+================================================================================
+Benchmark Results
+================================================================================
+
+Performance Metrics:
+  - Mean latency: 7.51 ms
+  - p50 latency: 5.97 ms
+  - p90 latency: 13.46 ms
+  - p99 latency: 15.63 ms
+  - Throughput: 133.16 inferences/sec
+
+CoreML Partitioning:
+  - CoreML partitions created: 20
+  - Total nodes in graph: 167
+  - Nodes supported by CoreML: 105
+  - Nodes requiring CPU fallback: 62
+
+================================================================================
+Profile Analysis
+================================================================================
+
+Total Profile Statistics:
+  - Total events: 8,829
+  - Total duration: 2,960.34 ms
+  - Session initialization: 474.58 ms
+  - Model loading: 9.28 ms
+
+Execution Time Breakdown:
+  - Session overhead: 2,167.89 ms (73.2%)
+  - Node execution: 792.45 ms (26.8%)
+
+Top CPU Fallback Operations:
+  1. Erf (layer 0): 20.71 ms (105 events) - GELU activation
+  2. Erf (layer 1): 19.56 ms (105 events) - GELU activation
+  3. MatMul operations: ~60 ms total
+  4. Softmax operations: ~8.38 ms total
+  5. Where, Cast, Expand: ~4.6 ms total
+
+CoreML Partition Performance:
+  - 20 unique CoreML partitions executing on ANE/GPU
+  - Top partition (4_4): 70.28 ms (105 events)
+  - Partitions handle majority of attention and feedforward operations
+  - Total CoreML time: ~625 ms across all partitions
+
+================================================================================
+Key Observations
+================================================================================
+
+1. Dynamic Shape Support:
+   ✅ FP32 model with dynamic batching successfully creates 20 CoreML partitions
+   ✅ Dynamic axes work correctly with CoreML EP
+   ✅ More partitions (20) compared to static shape version (16)
+
+2. Graph Fragmentation Pattern:
+   ⚠️  Erf operators (from GELU) remain as CPU fallback operations
+   ⚠️  Each Erf creates partition boundaries, limiting fusion opportunities
+   ✓  Despite fragmentation, CoreML handles most heavy operations
+
+3. Performance Characteristics:
+   ✓  Relatively low latency (~6ms p50) for 2-layer transformer
+   ✓  Good throughput (133 inferences/sec)
+   ⚠️  High session overhead relative to node execution time
+
+4. CoreML EP Behavior:
+   ✓  FP32 enables robust CoreML partitioning
+   ✓  105 out of 167 nodes successfully offloaded
+   ✓  ~63% node coverage by CoreML (vs CPU fallback)
+
+================================================================================
+Comparison: Static vs Dynamic Shapes
+================================================================================
+
+Static Shape (b1_s128):
+  - CoreML partitions: 16
+  - Mean latency: 5.11 ms
+  - Throughput: 195.70 inferences/sec
+
+Dynamic Shape (batch_size, sequence_length):
+  - CoreML partitions: 20 (25% more)
+  - Mean latency: 7.51 ms (47% slower)
+  - Throughput: 133.16 inferences/sec (32% lower)
+
+Trade-offs:
+  + Dynamic: Flexible input shapes, more partitions
+  + Static: Better performance, more optimized execution
+  - Dynamic: Higher overhead from shape resolution
+  - Static: Fixed shapes only
+
+================================================================================
+Recommendations
+================================================================================
+
+1. For Production Deployment:
+   - Use static shapes when input dimensions are known
+   - Static shapes provide 32% better throughput
+   - Lower latency and more predictable performance
+
+2. For Development/Experimentation:
+   - Dynamic shapes allow flexible testing
+   - Easier to benchmark across different batch sizes
+   - Useful for understanding model behavior
+
+3. For CoreML Optimization:
+   - FP32 provides better partitioning than FP16
+   - Consider FastGELU to eliminate Erf fallback
+   - Static shapes + FastGELU = optimal CoreML performance
+
+4. For Tiny-Systems-BERT specifically:
+   - Model is small enough for CPU-only execution
+   - CoreML overhead may not be worth the acceleration
+   - Consider CPU-only for latency-critical applications
+
+================================================================================
