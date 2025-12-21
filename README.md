@@ -85,14 +85,12 @@ One hypothesis is that model scale or embedding footprint contributes to fragmen
 
 Much of the CoreML architecture and specs are propriatary and not made publicly available. We can only obtain system insights by stress testing CoreML.
 
-![DistilBERT vs CPU/CoreML](results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_distilbert-base-uncased_combined.png)
+![DistilBERT vs Bert vs Tiny Systems Bert on CPU/CoreML](results/plots/m2_coreml_vs_cpu_consolidated.png)
 
 DistilBERT has roughly:
 - ~66M parameters
 - 6 transformer layers (vs 12)
 - Hidden size 768
-
-![tiny-systems-bert vs CPU/CoreML](results/plots/m2_coreml_vs_cpu/m2_coreml_vs_cpu_tiny-systems-bert_combined.png)
 
 Tiny Systems Bert has roughly:
   - ~4.4M parameters
@@ -109,6 +107,9 @@ This motivates a deeper diagnosis.
 
 ORT partitions the ONNX graph into multiple CoreML subgraphs separated by CPU-only operators. On tiny-systems-bert, profiling revealed the inference timeline bouncing across twenty CoreML islands, with executor overhead dominating runtime (Appendix A). The same handful of CPU-only ops—`Erf`, `Where`, `Cast`, `Expand`, `Unsqueeze`—keep slicing up the graph, so batching merely amortizes the cost instead of removing it. Fragmentation, not raw compute, is the bottleneck.
 
+In sections 4.3 - 4.5, we will explore and explain how model shape, activation function, and model precision impacts graph fragmentation and overall performance.
+
+![Tiny Systems Bert Latency Comparison](results/plots/tiny-systems-bert_latency_comparison.png)
 
 ---
 
@@ -138,6 +139,10 @@ In contrast:
 - **FP32 ONNX graphs are more reliably ingested**  
 - CoreML EP internally lowers precision as needed  
 - Full accelerator offload becomes possible  
+
+The reduced latency we observed in figure 4.1 above is not caused by increased efficiency from FP16, it is caused by all events fallback to CPU except fast-relu operations. When we plot CPU vs CoreML in this configuration (static batching, fast-relu, and FP16 precision), we now observe much overlap in performance.
+
+![FP16 CPU vs CoreML](results/plots/batch_scaling_cpu_vs_coreml.png)
 
 This shows that **user-visible dtype ≠ execution dtype** in CoreML.
 
