@@ -140,7 +140,7 @@ In contrast:
 - CoreML EP internally lowers precision as needed  
 - Full accelerator offload becomes possible  
 
-The reduced latency observed in this configuration is not due to improved CoreML partitioning under FP16, but rather because most operators fall back to CPU execution (See Appendix D for full profile summary). When plotting CPU vs CoreML in this configuration (static batching, fast-relu, and FP16 precision), we observe much overlap in performance.
+The reduced latency observed in this configuration is not due to improved CoreML partitioning under FP16, but rather because most operators fall back to CPU execution (Appendix D). When plotting CPU vs CoreML in this configuration (static batching, fast-relu, and FP16 precision), we observe much overlap in performance.
 
 ![FP16 CPU vs CoreML](results/plots/batch_scaling_cpu_vs_coreml.png)
 
@@ -287,3 +287,128 @@ Profiling reference run: `results/txt/tiny-systems-bert_fp16_static_b1_s128_fast
 This run highlights §4.5: The FP16 export executes almost entirely on CPU with minimal CPU/CoreML tansitions. The reduced latency observed in this configuration is not due to improved CoreML partitioning under FP16, but rather because most operators fall back to CPU execution.
 
 [Full profile summary](results/txt/tiny-systems-bert_fp16_static_b1_s128_fast-gelu_profile_summary.txt)
+
+---
+
+### Appendix E — Example Workflow Commands
+
+Complete end-to-end pipeline for benchmarking and analyzing a model:
+
+#### Step 1: Export Model to ONNX
+
+**Note:** The `--output-name` should match the original model name (e.g., `tiny-systems-bert`) for tokenizer inference to work in the benchmarking script.
+
+```bash
+# Export with static shapes (recommended for CoreML)
+python3 scripts/export_to_onnx.py \
+  --model-name tiny-systems-bert \
+  --batch 1 \
+  --max-length 128 \
+  --static-shapes \
+  --output-name tiny-systems-bert_b1_s128_gelu_fp32
+
+# Export with FastGELU activation (eliminates Erf bottleneck)
+python3 scripts/export_to_onnx.py \
+  --model-name tiny-systems-bert \
+  --batch 1 \
+  --max-length 128 \
+  --static-shapes \
+  --fast-gelu \
+  --output-name tiny-systems-bert_b1_s128_fast-gelu_fp32
+
+# Export with FP16 precision
+python3 scripts/export_to_onnx.py \
+  --model-name tiny-systems-bert \
+  --batch 1 \
+  --max-length 128 \
+  --static-shapes \
+  --fast-gelu \
+  --fp16 \
+  --output-name tiny-systems-bert_b1_s128_fast-gelu_fp16
+```
+
+#### Step 2: Run Benchmark with Profiling
+
+```bash
+# Benchmark with CoreML EP (generates profile JSON)
+python3 scripts/run_mac_bench.py \
+  --model tiny-systems-bert_b1_s128_gelu_fp32 \
+  --ep coreml_cpu \
+  --batch 1 \
+  --seq-len 128 \
+  --profile-dir profiles
+
+# The script automatically:
+# - Runs benchmark (100 iterations with 5 warmup)
+# - Generates profile JSON in profiles/
+# - Creates human-readable summary via summarize_ort_profile.py
+# - Reports latency (p50, p90, p99) and throughput
+``` 
+
+#### Step 3: Analyze Fragmentation
+
+```bash
+# Compare graph fragmentation across models
+python3 scripts/analyze_fragmentation.py
+
+# Output shows:
+# - CoreML partition count
+# - CPU vs CoreML operation breakdown
+# - Execution time distribution
+# - Unique CPU fallback operations
+```
+
+#### Step 4: Generate Comparison Plots
+
+```bash
+# Compare configurations side-by-side
+python3 scripts/plot_profile_comparison.py
+
+# Consolidate all transformer results
+python3 scripts/plot_consolidated_comparison.py
+
+# Run complete MobileNet comparison study
+python3 scripts/run_mobilenet_comparison.py
+```
+
+#### Example: Complete Analysis Pipeline
+
+```bash
+# 1. Export static FP32 with GELU
+python3 scripts/export_to_onnx.py \
+  --model-name tiny-systems-bert \
+  --batch 1 --max-length 128 \
+  --static-shapes \
+  --output-name tiny-systems-bert_b1_s128_gelu_fp32
+
+# 2. Benchmark with profiling
+python3 scripts/run_mac_bench.py \
+  --model tiny-systems-bert_b1_s128_gelu_fp32 \
+  --ep coreml_cpu \
+  --batch 1 --seq-len 128 \
+  --profile-dir profiles
+
+# 3. Profile summary is auto-generated at:
+# profiles/tiny-systems-bert_b1_s128_gelu_fp32_b1_s128_CoreMLExecutionProvider_CPUExecutionProvider_summary.txt
+
+# 4. Copy to results for documentation
+cp profiles/tiny-systems-bert_b1_s128_gelu_fp32_*_summary.txt \
+   results/txt/
+
+# 5. Analyze fragmentation patterns
+python3 scripts/analyze_fragmentation.py
+
+# 6. Generate comparison visualizations
+python3 scripts/plot_profile_comparison.py
+```
+
+#### Quick Reference: Key Flags
+
+- `--static-shapes`: Fix batch/seq dimensions (required for stable CoreML behavior)
+- `--fast-gelu`: Replace GELU with tanh approximation (eliminates Erf CPU fallback)
+- `--fp16`: Export in FP16 precision (may fail CoreML partitioning)
+- `--ep coreml_cpu`: Use CoreML with CPU fallback
+- `--ep cpu`: CPU-only baseline for comparison
+- `--profile-dir profiles`: Enable profiling and save to profiles/
+
+---
