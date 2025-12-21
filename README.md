@@ -223,7 +223,20 @@ For developers deploying ML on Apple devices:
 
 ## 6. Repository Layout
 
-
+- `bench/` — benchmarking harnesses plus helper modules (model loader, tokenizer plumbing)
+- `models/` — exported ONNX artifacts (multiple precisions, activations, batch shapes)
+- `scripts/`
+  - `run_mac_bench.py` — main benchmark runner + profiler generator
+  - `run_mobilenet_comparison.py`, `plot_batch_scaling.py` — figure generation
+  - `export_vision_to_onnx.py` — MobileNet conversion utility
+- `results/`
+  - `plots/` — all figures referenced in this study
+  - `csv/` — raw benchmark metrics for reproducibility
+  - `txt/` — profiler summaries cited throughout sections 4.x
+- `profiles/` — raw ORT JSON traces (large; regenerated via scripts)
+- `notebooks/` — exploratory analysis and quick plotting
+- `tiny-systems-bert/` — training/config assets for the control transformer
+- `requirements.txt` — Python dependency lock-in for Apple Silicon environment
 
 ---
 
