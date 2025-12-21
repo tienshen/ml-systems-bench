@@ -81,7 +81,7 @@ Initial profiling reveals:
 - frequent CPU↔CoreML transitions  
 - significant dispatch overhead  
 
-One hypothesis is that model scale or embedding footprint contributes to fragmentation; however, because CoreML internals are proprietary, we test this empirically by reducing model depth and hidden size.”
+One hypothesis is that model scale or embedding footprint may contributes to fragmentation; however, because CoreML internals are proprietary, we test this empirically by reducing model depth and hidden size.
 
 Much of the CoreML architecture and specs are propriatary and not made publicly available. We can only obtain system insights by stress testing CoreML.
 
@@ -140,7 +140,7 @@ In contrast:
 - CoreML EP internally lowers precision as needed  
 - Full accelerator offload becomes possible  
 
-The reduced latency we observed in figure 4.1 above is not caused by increased efficiency from FP16, it is caused by all events fallback to CPU except fast-relu operations. When we plot CPU vs CoreML in this configuration (static batching, fast-relu, and FP16 precision), we now observe much overlap in performance.
+The reduced latency observed in this configuration is not due to improved CoreML partitioning under FP16, but rather because most operators fall back to CPU execution. When plotting CPU vs CoreML in this configuration (static batching, fast-relu, and FP16 precision), we observe much overlap in performance.
 
 ![FP16 CPU vs CoreML](results/plots/batch_scaling_cpu_vs_coreml.png)
 
@@ -228,8 +228,6 @@ The central insight is that **frontend compatibility and graph structure govern 
 Detailed per-kernel traces, executor breakdowns, and exact timing measurements
 supporting Sections 4.2–4.4 are provided below for reproducibility.
 
-### Appendix A — tiny-systems-bert FP32 dynamic (baseline)
-
 Profiling reference run: `results/txt/tiny-systems-bert_fp32_dynamic_gelu_profile_summary.txt`
 
 ### Appendix A — tiny-systems-bert FP32 dynamic (baseline)
@@ -273,3 +271,19 @@ Profiling reference run: `results/txt/tiny-systems-bert_fp32_static_b1_s128_fast
 Appendix C supports §4.4 by showing how FastGELU eliminates `Erf` bottlenecks, enabling longer CoreML segments even though the partition count drops.
 
 [Full profile summary](results/txt/tiny-systems-bert_fp32_static_b1_s128_fast-gelu_profile_summary.txt)
+
+---
+
+### Appendix D — tiny-systems-bert FP16 static + FastGELU
+
+Profiling reference run: `results/txt/tiny-systems-bert_fp16_static_b1_s128_fast-gelu_profile_summary.txt`
+
+- Total duration: 0.90 s  
+- CoreML partitions: 14  
+- Nodes: 133 (CoreML: 110)  
+- Executor time: 287 ms  
+- All heavy ops run on CoreML; CPU work limited to lightweight control ops
+
+This run highlights §4.5: The FP16 export executes almost entirely on CPU with minimal CPU/CoreML tansitions.
+
+[Full profile summary](results/txt/tiny-systems-bert_fp16_static_b1_s128_fast-gelu_profile_summary.txt)

@@ -89,7 +89,7 @@ def main():
         return
     
     # Create the bar graph
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(8, 5))
     
     colors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c']
     bars = ax.bar(range(len(data)), data, color=colors[:len(data)], alpha=0.8, 

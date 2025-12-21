@@ -200,7 +200,7 @@ def plot_comparison(results, output_path="results/plots/mobilenet_coreml_cpu_com
     bars3 = ax3.bar(range(len(configs)), coreml_usage, color=colors, alpha=0.8, 
                     edgecolor='black', linewidth=1.5)
     ax3.set_ylabel('CoreML Partition Usage (%)', fontsize=12, fontweight='bold')
-    ax3.set_title('CoreML Graph Partitioning\n(Higher is Better)', fontsize=13, fontweight='bold')
+    ax3.set_title('CoreML Graph Partitioning', fontsize=13, fontweight='bold')
     ax3.set_xticks(range(len(configs)))
     ax3.set_xticklabels(configs, fontsize=10)
     ax3.set_ylim(0, 110)
