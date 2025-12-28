@@ -10,9 +10,19 @@ import coremltools as ct
 from pathlib import Path
 
 
-def run_bench(model_path, batch_size=1, num_warmup=5, num_runs=50, dtype='fp32', dynamic_batch=False):
+def run_bench(model_path, batch_size=1, num_warmup=5, num_runs=50, dtype='fp32', dynamic_batch=False, compute_unit='all'):
+    # Set compute unit
+    config = ct.models.MLModelConfiguration()
+    if compute_unit == 'cpu':
+        config.compute_units = ct.ComputeUnit.CPU_ONLY
+    elif compute_unit == 'gpu':
+        config.compute_units = ct.ComputeUnit.CPU_AND_GPU
+    elif compute_unit == 'neural':
+        config.compute_units = ct.ComputeUnit.CPU_AND_NE
+    else:
+        config.compute_units = ct.ComputeUnit.ALL
     # Load model
-    model = ct.models.MLModel(model_path)
+    model = ct.models.MLModel(model_path, configuration=config)
     spec = model.get_spec()
     # Get input name and shape from spec
     if len(spec.description.input) == 0:
@@ -74,6 +84,7 @@ def main():
     parser.add_argument('--dynamic-batch', action='store_true', help='Use dynamic batch size (if model supports)')
     parser.add_argument('--num-warmup', type=int, default=5, help='Number of warmup runs')
     parser.add_argument('--num-runs', type=int, default=100, help='Number of timed runs')
+    parser.add_argument('--compute-unit', choices=['all', 'cpu', 'gpu', 'neural'], default='all', help='Core ML compute unit to use')
     args = parser.parse_args()
 
     result = run_bench(
@@ -82,7 +93,8 @@ def main():
         num_warmup=args.num_warmup,
         num_runs=args.num_runs,
         dtype=args.dtype,
-        dynamic_batch=args.dynamic_batch
+        dynamic_batch=args.dynamic_batch,
+        compute_unit=args.compute_unit
     )
     print("\nBenchmark Result:")
     for k, v in result.items():
