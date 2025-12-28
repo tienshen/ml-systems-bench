@@ -45,6 +45,7 @@ models/*.pt
 models/*.pth
 models/*.bin
 tiny-systems-bert/
+models/coreml-converted/*
 profiles/
 # Keep .gitkeep
 !models/.gitkeep
